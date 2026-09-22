@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: marketgrid-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - marketgrid-net
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: marketgrid-eureka
+    ports:
+      - "8761:8761"
+    environment:
+      - SERVER_PORT=8761
+    networks:
+      - marketgrid-net
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: marketgrid-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=${JWT_SECRET:-marketgrid_super_secret_jwt_key_that_is_at_least_256_bits_long_for_hmac_sha256}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+    depends_on:
+      - eureka-server
+    networks:
+      - marketgrid-net
+
+  auth-service:
+    build: ./auth-service
+    container_name: marketgrid-auth
+    ports:
+      - "8081:8081"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/auth_db
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=${JWT_SECRET:-marketgrid_super_secret_jwt_key_that_is_at_least_256_bits_long_for_hmac_sha256}
+    depends_on:
+      - mongodb
+      - eureka-server
+    networks:
+      - marketgrid-net
+
+  product-service:
+    build: ./product-service
+    container_name: marketgrid-product
+    ports:
+      - "8082:8082"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/product_db
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      - mongodb
+      - eureka-server
+    networks:
+      - marketgrid-net
+
+  vendor-service:
+    build: ./vendor-service
+    container_name: marketgrid-vendor
+    ports:
+      - "8083:8083"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/vendor_db
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      - mongodb
+      - eureka-server
+    networks:
+      - marketgrid-net
+
+  order-service:
+    build: ./order-service
+    container_name: marketgrid-order
+    ports:
+      - "8084:8084"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/order_db
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      - mongodb
+      - eureka-server
+    networks:
+      - marketgrid-net
+
+  notification-service:
+    build: ./notification-service
+    container_name: marketgrid-notification
+    ports:
+      - "8085:8085"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/notification_db
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME:-noreply@marketgrid.com}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-secret}
+    depends_on:
+      - mongodb
+      - eureka-server
+    networks:
+      - marketgrid-net
+
+networks:
+  marketgrid-net:
+    driver: bridge
+
+volumes:
+  mongo_data:

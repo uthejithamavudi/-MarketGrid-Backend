@@ -1,0 +1,88 @@
+services:
+  - type: web
+    name: marketgrid-eureka
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -XX:+UseSerialGC -Xss256k -XX:MaxRAM=400m -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false -Dserver.tomcat.threads.max=10 -jar /app/eureka.jar --server.port=$PORT
+    plan: free
+
+  - type: web
+    name: marketgrid-gateway
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -XX:+UseSerialGC -Xss256k -XX:MaxRAM=400m -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false -Dserver.tomcat.threads.max=10 -jar /app/gateway.jar --server.port=$PORT
+    plan: free
+    envVars:
+      - key: EUREKA_SERVER_URL
+        value: http://marketgrid-eureka:10000/eureka/
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: web
+    name: marketgrid-auth
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -XX:+UseSerialGC -Xss256k -XX:MaxRAM=400m -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false -Dserver.tomcat.threads.max=10 -jar /app/auth.jar --server.port=$PORT
+    plan: free
+    envVars:
+      - key: EUREKA_SERVER_URL
+        value: http://marketgrid-eureka:10000/eureka/
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: marketgrid-gateway
+          envVarKey: JWT_SECRET
+      - key: MONGODB_URI
+        sync: false
+
+  - type: web
+    name: marketgrid-product
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -XX:+UseSerialGC -Xss256k -XX:MaxRAM=400m -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false -Dserver.tomcat.threads.max=10 -jar /app/product.jar --server.port=$PORT
+    plan: free
+    envVars:
+      - key: EUREKA_SERVER_URL
+        value: http://marketgrid-eureka:10000/eureka/
+      - key: MONGODB_URI
+        sync: false
+
+  - type: web
+    name: marketgrid-vendor
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -XX:+UseSerialGC -Xss256k -XX:MaxRAM=400m -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false -Dserver.tomcat.threads.max=10 -jar /app/vendor.jar --server.port=$PORT
+    plan: free
+    envVars:
+      - key: EUREKA_SERVER_URL
+        value: http://marketgrid-eureka:10000/eureka/
+      - key: MONGODB_URI
+        sync: false
+
+  - type: web
+    name: marketgrid-order
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -XX:+UseSerialGC -Xss256k -XX:MaxRAM=400m -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false -Dserver.tomcat.threads.max=10 -jar /app/order.jar --server.port=$PORT
+    plan: free
+    envVars:
+      - key: EUREKA_SERVER_URL
+        value: http://marketgrid-eureka:10000/eureka/
+      - key: MONGODB_URI
+        sync: false
+
+  - type: web
+    name: marketgrid-notification
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -XX:+UseSerialGC -Xss256k -XX:MaxRAM=400m -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false -Dserver.tomcat.threads.max=10 -jar /app/notification.jar --server.port=$PORT
+    plan: free
+    envVars:
+      - key: EUREKA_SERVER_URL
+        value: http://marketgrid-eureka:10000/eureka/
+      - key: MONGODB_URI
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
