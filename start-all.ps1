@@ -73,7 +73,7 @@ function Start-Svc {
         foreach ($k in $env.Keys) {
             [System.Environment]::SetEnvironmentVariable($k, $env[$k], 'Process')
         }
-        & java -jar $jar
+        & java -Xms64m -Xmx256m -jar $jar
     } -ArgumentList $JarPath, $Env | Out-Null
 }
 
